@@ -101,11 +101,7 @@ impl ManagedValueState {
     }
 
     /// Flush the internal state to a write batch.
-    pub async fn flush<S: StateStore>(
-        &mut self,
-        _write_batch: &mut WriteBatch<S>,
-        state_table: &mut StateTable<S>,
-    ) -> Result<()> {
+    pub async fn flush<S: StateStore>(&mut self, state_table: &mut StateTable<S>) -> Result<()> {
         // If the managed state is not dirty, the caller should not flush. But forcing a flush won't
         // cause incorrect result: it will only produce more I/O.
         debug_assert!(self.is_dirty());
