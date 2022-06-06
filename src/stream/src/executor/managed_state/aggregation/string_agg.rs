@@ -160,6 +160,7 @@ impl<S: StateStore> ManagedTableState<S> for ManagedStringAggState<S> {
         visibility: Option<&Bitmap>,
         data: &[&ArrayImpl],
         epoch: u64,
+        state_table: &mut StateTable<S>
     ) -> Result<()> {
         debug_assert!(super::verify_batch(ops, visibility, data));
         for sort_key_index in &self.sort_key_indices {
