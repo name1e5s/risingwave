@@ -36,7 +36,7 @@
 pub mod base;
 mod datagen;
 mod filesystem;
-mod kafka;
+pub mod kafka;
 pub mod kinesis;
 mod nexmark;
 mod pulsar;
