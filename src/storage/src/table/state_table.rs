@@ -228,6 +228,10 @@ impl<S: StateStore> StateTable<S> {
             epoch,
         ))
     }
+
+    pub fn pk_indices(&self) -> &[usize] {
+        &self._pk_indices
+    }
 }
 
 pub trait RowStream<'a> = Stream<Item = StorageResult<Cow<'a, Row>>> + 'a;

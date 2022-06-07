@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use async_trait::async_trait;
+use futures::{pin_mut, StreamExt};
 use itertools::Itertools;
 use madsim::collections::BTreeMap;
 use risingwave_common::array::stream_chunk::{Op, Ops};
@@ -21,13 +22,13 @@ use risingwave_common::buffer::Bitmap;
 use risingwave_common::error::{ErrorCode, Result};
 use risingwave_common::hash::{HashCode, VirtualNode};
 use risingwave_common::types::*;
-use risingwave_common::util::value_encoding::{deserialize_cell, serialize_cell};
+use risingwave_common::util::value_encoding::{deserialize_cell};
 use risingwave_expr::expr::AggKind;
-use risingwave_storage::storage_value::{StorageValue, ValueMeta};
+use risingwave_storage::storage_value::{ValueMeta};
 use risingwave_storage::table::state_table::StateTable;
 use risingwave_storage::write_batch::WriteBatch;
 use risingwave_storage::{Keyspace, StateStore};
-use smallvec::SmallVec;
+
 
 use super::super::flush_status::BtreeMapFlushStatus as FlushStatus;
 use super::extreme_serializer::{variants, ExtremePk, ExtremeSerializer};
@@ -109,13 +110,17 @@ pub trait ManagedTableState<S: StateStore>: Send + Sync + 'static {
     ) -> Result<()>;
 
     /// Get the output of the state. Must flush before getting output.
-    async fn get_output(&mut self, epoch: u64) -> Result<Datum>;
+    async fn get_output(&mut self, epoch: u64, state_table: &StateTable<S>) -> Result<Datum>;
 
     /// Check if this state needs a flush.
     fn is_dirty(&self) -> bool;
 
     /// Flush the internal state to a write batch.
-    fn flush(&mut self, state_table: &mut StateTable<S>) -> Result<()>;
+    fn flush(
+        &mut self,
+        write_batch: &mut WriteBatch<S>,
+        state_table: &mut StateTable<S>,
+    ) -> Result<()>;
 }
 
 impl<S: StateStore, A: Array, const EXTREME_TYPE: usize> GenericExtremeState<S, A, EXTREME_TYPE>
@@ -299,7 +304,7 @@ where
         None
     }
 
-    async fn get_output_inner(&mut self, epoch: u64) -> Result<Datum> {
+    async fn get_output_inner(&mut self, epoch: u64, state_table: &StateTable<S>) -> Result<Datum> {
         // To make things easier, we do not allow get_output before flushing. Otherwise we will need
         // to merge data from flush_buffer and state store, which is hard to implement.
         //
@@ -325,6 +330,22 @@ where
                 let key = value.clone().map(|x| x.try_into().unwrap());
                 let pks = self.serializer.get_pk(&raw_key[..])?;
                 self.top_n.insert((key, pks), value);
+            }
+
+            let all_data_iter = state_table.iter(epoch).await?;
+            pin_mut!(all_data_iter);
+            while let Some(inner) = all_data_iter.next().await {
+                let row = inner.unwrap().into_owned();
+                let value = row[0].clone();
+                let mut key = ExtremePk::with_capacity(1);
+                for (idx, pk_indice) in state_table.pk_indices().iter().enumerate() {
+                    if idx == 0 {
+                        continue;
+                    }
+                    key.push(row[*pk_indice].clone());
+                }
+                let sort_key = value.map(|row| row.try_into().unwrap());
+                self.top_n.insert((sort_key, key), row[0].clone());
             }
 
             if let Some(v) = self.get_output_from_cache() {
@@ -391,11 +412,12 @@ where
         _epoch: u64,
         state_table: &mut StateTable<S>,
     ) -> Result<()> {
-        self.apply_batch_inner(ops, visibility, data, state_table).await
+        self.apply_batch_inner(ops, visibility, data, state_table)
+            .await
     }
 
-    async fn get_output(&mut self, epoch: u64) -> Result<Datum> {
-        self.get_output_inner(epoch).await
+    async fn get_output(&mut self, epoch: u64, state_table: &StateTable<S>) -> Result<Datum> {
+        self.get_output_inner(epoch, state_table).await
     }
 
     /// Check if this state needs a flush.
@@ -403,7 +425,11 @@ where
         !self.flush_buffer.is_empty()
     }
 
-    fn flush(&mut self, state_table: &mut StateTable<S>) -> Result<()> {
+    fn flush(
+        &mut self,
+        write_batch: &mut WriteBatch<S>,
+        state_table: &mut StateTable<S>,
+    ) -> Result<()> {
         self.flush_inner(state_table)
     }
 }

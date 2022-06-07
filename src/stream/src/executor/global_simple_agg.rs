@@ -189,7 +189,7 @@ impl<S: StateStore> SimpleAggExecutor<S> {
 
         // 2. Mark the state as dirty by filling prev states
         states
-            .may_mark_as_dirty(epoch)
+            .may_mark_as_dirty(epoch, state_tables)
             .await
             .map_err(StreamExecutorError::agg_state_error)?;
 
@@ -234,7 +234,7 @@ impl<S: StateStore> SimpleAggExecutor<S> {
             .zip_eq(state_tables.iter_mut())
         {
             state
-                .flush(state_table)
+                .flush(&mut write_batch, state_table)
                 .await
                 .map_err(StreamExecutorError::agg_state_error)?;
         }
@@ -258,7 +258,7 @@ impl<S: StateStore> SimpleAggExecutor<S> {
 
         // --- Retrieve modified states and put the changes into the builders ---
         states
-            .build_changes(&mut builders, &mut new_ops, epoch)
+            .build_changes(&mut builders, &mut new_ops, epoch, &state_tables)
             .await
             .map_err(StreamExecutorError::agg_state_error)?;
 
