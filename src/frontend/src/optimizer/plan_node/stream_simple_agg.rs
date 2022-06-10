@@ -88,11 +88,7 @@ impl ToStreamProst for StreamSimpleAgg {
                 .collect_vec(),
             table_ids: vec![],
             append_only: self.append_only(),
-            table: Some({
-                let t = infer_internal_state_table_catalog(self.input()).to_prost();
-                println!("internal table is {:#?}", t);
-                t
-            }),
+            table: Some(infer_internal_state_table_catalog(self.input()).to_prost()),
         })
     }
 }
