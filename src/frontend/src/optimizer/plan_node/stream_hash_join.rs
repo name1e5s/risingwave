@@ -21,7 +21,7 @@ use risingwave_pb::stream_plan::stream_node::NodeBody;
 use risingwave_pb::stream_plan::HashJoinNode;
 
 use super::{LogicalJoin, PlanBase, PlanRef, PlanTreeNodeBinary, StreamDeltaJoin, ToStreamProst};
-use crate::catalog::internal_state_catalog::infer_internal_state_catalog;
+use crate::catalog::internal_state_table_catalog::infer_internal_state_table_catalog;
 use crate::expr::Expr;
 use crate::optimizer::plan_node::EqJoinPredicate;
 use crate::optimizer::property::Distribution;
@@ -180,8 +180,8 @@ impl ToStreamProst for StreamHashJoin {
                 .map(|idx| *idx as u32)
                 .collect_vec(),
             is_delta_join: self.is_delta,
-            left_table: Some(infer_internal_state_catalog(self.left()).to_prost()),
-            right_table: Some(infer_internal_state_catalog(self.right()).to_prost()),
+            left_table: Some(infer_internal_state_table_catalog(self.left()).to_prost()),
+            right_table: Some(infer_internal_state_table_catalog(self.right()).to_prost()),
             ..Default::default()
         })
     }

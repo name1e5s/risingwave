@@ -20,7 +20,7 @@ use super::column_catalog::ColumnCatalog;
 use crate::optimizer::PlanRef;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InternalStateCatalog {
+pub struct InternalStateTableCatalog {
     pub id: TableId,
 
     pub name: String,
@@ -32,7 +32,7 @@ pub struct InternalStateCatalog {
     pub distribution_keys: Vec<usize>,
 }
 
-impl InternalStateCatalog {
+impl InternalStateTableCatalog {
     /// Get a reference to the internal state catalog's columns.
     pub fn columns(&self) -> &[ColumnCatalog] {
         &self.columns
@@ -55,7 +55,7 @@ impl InternalStateCatalog {
     }
 }
 
-pub fn infer_internal_state_catalog(plan_node: PlanRef) -> InternalStateCatalog {
+pub fn infer_internal_state_table_catalog(plan_node: PlanRef) -> InternalStateTableCatalog {
     let base = plan_node.plan_base();
     let schema = &base.schema;
     let pk_indices = &base.pk_indices;
@@ -69,7 +69,7 @@ pub fn infer_internal_state_catalog(plan_node: PlanRef) -> InternalStateCatalog 
         })
         .collect_vec();
 
-    InternalStateCatalog {
+    InternalStateTableCatalog {
         id: TableId::placeholder(),
         name: String::from("__INTERNAL_TABLE"),
         columns,
