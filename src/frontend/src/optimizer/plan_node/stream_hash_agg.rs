@@ -19,6 +19,7 @@ use risingwave_pb::stream_plan::stream_node::NodeBody as ProstStreamNode;
 
 use super::logical_agg::PlanAggCall;
 use super::{LogicalAgg, PlanBase, PlanRef, PlanTreeNodeUnary, ToStreamProst};
+use crate::catalog::internal_state_catalog::infer_internal_state_catalog;
 use crate::expr::InputRefDisplay;
 use crate::optimizer::property::Distribution;
 
@@ -91,7 +92,6 @@ impl_plan_tree_node_for_unary! { StreamHashAgg }
 impl ToStreamProst for StreamHashAgg {
     fn to_stream_prost_body(&self) -> ProstStreamNode {
         use risingwave_pb::stream_plan::*;
-
         ProstStreamNode::HashAgg(HashAggNode {
             distribution_keys: self
                 .distribution_keys()
@@ -105,6 +105,7 @@ impl ToStreamProst for StreamHashAgg {
                 .collect_vec(),
             table_ids: vec![],
             append_only: self.append_only(),
+            table: Some(infer_internal_state_catalog(self.input()).to_prost()),
         })
     }
 }

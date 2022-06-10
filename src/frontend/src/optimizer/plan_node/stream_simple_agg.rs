@@ -19,6 +19,7 @@ use risingwave_pb::stream_plan::stream_node::NodeBody as ProstStreamNode;
 
 use super::logical_agg::PlanAggCall;
 use super::{LogicalAgg, PlanBase, PlanRef, PlanTreeNodeUnary, ToStreamProst};
+use crate::catalog::internal_state_catalog::infer_internal_state_catalog;
 use crate::optimizer::property::Distribution;
 
 #[derive(Debug, Clone)]
@@ -87,6 +88,11 @@ impl ToStreamProst for StreamSimpleAgg {
                 .collect_vec(),
             table_ids: vec![],
             append_only: self.append_only(),
+            table: Some({
+                let t = infer_internal_state_catalog(self.input()).to_prost();
+                println!("internal table is {:#?}", t);
+                t
+            }),
         })
     }
 }

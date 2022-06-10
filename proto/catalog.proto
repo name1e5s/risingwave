@@ -58,6 +58,16 @@ message Table {
   bool appendonly = 14;
 }
 
+message InternalStateTable {
+  uint32 id = 1;
+  int32 schema_id = 2;
+  int32 database_id = 3;
+  string name = 4;
+  repeated int32 pk = 5;
+  repeated plan_common.ColumnCatalog columns = 6;
+  repeated int32 distribution_keys = 7;
+}
+
 message Schema {
   uint32 id = 1;
   uint32 database_id = 2;

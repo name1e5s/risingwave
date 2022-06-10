@@ -14,9 +14,11 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::vec;
 
-use risingwave_common::catalog::TableId;
+use risingwave_common::catalog::{DatabaseId, SchemaId, TableId};
 use risingwave_common::error::Result;
+use risingwave_pb::catalog::InternalStateTable;
 use risingwave_pb::data::data_type::TypeName;
 use risingwave_pb::data::DataType;
 use risingwave_pb::expr::agg_call::{Arg, Type};
@@ -99,6 +101,18 @@ fn make_column_order(idx: i32) -> ColumnOrder {
     }
 }
 
+fn make_internal_state_catalog() -> InternalStateTable {
+    InternalStateTable {
+        id: TableId::placeholder().table_id,
+        schema_id: SchemaId::placeholder(),
+        database_id: DatabaseId::placeholder(),
+        name: String::from("__INTERNAL_TABLE"),
+        pk: vec![1],
+        columns: vec![], // TODO: fill it if necessary
+        distribution_keys: vec![],
+    }
+}
+
 /// [`make_stream_node`] build a plan represent in `StreamNode` for SQL as follow:
 /// ```sql
 /// create table t (v1 int, v2 int);
@@ -167,6 +181,7 @@ fn make_stream_node() -> StreamNode {
             distribution_keys: Default::default(),
             table_ids: vec![],
             append_only: false,
+            table: Some(make_internal_state_catalog()),
         })),
         input: vec![filter_node],
         fields: vec![], // TODO: fill this later
@@ -199,6 +214,7 @@ fn make_stream_node() -> StreamNode {
             distribution_keys: Default::default(),
             table_ids: vec![],
             append_only: false,
+            table: Some(make_internal_state_catalog()),
         })),
         fields: vec![], // TODO: fill this later
         input: vec![exchange_node_1],

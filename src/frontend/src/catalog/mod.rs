@@ -20,11 +20,11 @@ pub(crate) mod catalog_service;
 
 pub(crate) mod column_catalog;
 pub(crate) mod database_catalog;
+pub(crate) mod internal_state_catalog;
 pub(crate) mod root_catalog;
 pub(crate) mod schema_catalog;
 pub(crate) mod source_catalog;
 pub(crate) mod table_catalog;
-
 pub(crate) type SourceId = u32;
 
 pub(crate) type DatabaseId = u32;
