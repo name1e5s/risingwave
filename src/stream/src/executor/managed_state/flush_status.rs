@@ -71,12 +71,6 @@ impl<T: std::fmt::Debug> BtreeMapFlushStatus<T> {
                 if e.get().is_delete() {
                     // Delete -> DeleteInsert
                     e.insert(Self::DeleteInsert(value));
-                } else {
-                    panic!(
-                        "invalid flush status: double insert {:?} -> {:?}",
-                        e.key(),
-                        value
-                    );
                 }
             }
         }
