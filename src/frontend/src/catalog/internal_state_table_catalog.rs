@@ -41,8 +41,8 @@ impl InternalStateTableCatalog {
     pub fn to_prost(&self) -> ProstInternalStateTable {
         ProstInternalStateTable {
             id: self.id.table_id as u32,
-            schema_id: SchemaId::placeholder(),
-            database_id: DatabaseId::placeholder(),
+            schema_id: SchemaId::placeholder() as u32,
+            database_id: DatabaseId::placeholder() as u32,
             name: self.name.clone(),
             pk: self.pks.iter().map(|x| *x as _).collect(),
             columns: self.columns().iter().map(|c| c.to_protobuf()).collect(),
@@ -75,5 +75,28 @@ pub fn infer_internal_state_table_catalog(plan_node: PlanRef) -> InternalStateTa
         columns,
         pks: pk_indices.clone(),
         distribution_keys: base.dist.dist_column_indices().to_vec(),
+    }
+}
+
+impl From<ProstInternalStateTable> for InternalStateTableCatalog {
+    fn from(tb: ProstInternalStateTable) -> Self {
+        let columns: Vec<ColumnCatalog> = tb.columns.into_iter().map(ColumnCatalog::from).collect();
+        Self {
+            id: tb.id.into(),
+            name: tb.name.clone(),
+            pks: tb.pk.iter().map(|x| *x as _).collect(),
+            columns,
+            distribution_keys: tb
+                .distribution_keys
+                .iter()
+                .map(|k| *k as usize)
+                .collect_vec(),
+        }
+    }
+}
+
+impl From<&ProstInternalStateTable> for InternalStateTableCatalog {
+    fn from(tb: &ProstInternalStateTable) -> Self {
+        tb.clone().into()
     }
 }

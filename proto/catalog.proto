@@ -60,8 +60,8 @@ message Table {
 
 message InternalStateTable {
   uint32 id = 1;
-  int32 schema_id = 2;
-  int32 database_id = 3;
+  uint32 schema_id = 2;
+  uint32 database_id = 3;
   string name = 4;
   repeated int32 pk = 5;
   repeated plan_common.ColumnCatalog columns = 6;

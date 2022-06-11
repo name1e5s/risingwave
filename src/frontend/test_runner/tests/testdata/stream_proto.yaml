@@ -461,6 +461,24 @@
               returnType:
                 typeName: INT64
                 isNullable: true
+          table:
+            id: 4294967294
+            schemaId: 2147483646
+            databaseId: 2147483646
+            name: __INTERNAL_TABLE
+            pk:
+              - 1
+            columns:
+              - columnDesc:
+                  columnType:
+                    typeName: INT32
+                    isNullable: true
+                  name: v1
+              - columnDesc:
+                  columnType:
+                    typeName: INT64
+                    isNullable: true
+                  name: _row_id
     pkIndices:
       - 0
       - 1
@@ -679,6 +697,31 @@
                   returnType:
                     typeName: INT64
                     isNullable: true
+              table:
+                id: 4294967294
+                schemaId: 2147483646
+                databaseId: 2147483646
+                name: __INTERNAL_TABLE
+                pk:
+                  - 2
+                columns:
+                  - columnDesc:
+                      columnType:
+                        typeName: INT32
+                        isNullable: true
+                      name: v2
+                  - columnDesc:
+                      columnType:
+                        typeName: INT32
+                        isNullable: true
+                      name: v1
+                  - columnDesc:
+                      columnType:
+                        typeName: INT64
+                        isNullable: true
+                      name: _row_id
+                distributionKeys:
+                  - 0
         pkIndices:
           - 1
         fields:

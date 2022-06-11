@@ -104,8 +104,8 @@ fn make_column_order(idx: i32) -> ColumnOrder {
 fn make_internal_state_catalog() -> InternalStateTable {
     InternalStateTable {
         id: TableId::placeholder().table_id,
-        schema_id: SchemaId::placeholder(),
-        database_id: DatabaseId::placeholder(),
+        schema_id: SchemaId::placeholder() as u32,
+        database_id: DatabaseId::placeholder() as u32,
         name: String::from("__INTERNAL_TABLE"),
         pk: vec![1],
         columns: vec![], // TODO: fill it if necessary
