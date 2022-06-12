@@ -18,7 +18,7 @@ use futures_async_stream::try_stream;
 use risingwave_batch::executor::ExecutorBuilder;
 use risingwave_batch::task::TaskId;
 use risingwave_common::array::DataChunk;
-use risingwave_common::error::{internal_error, Result, RwError};
+use risingwave_common::error::RwError;
 use risingwave_pb::batch_plan::{PlanFragment, PlanNode as PlanNodeProst};
 use tracing::debug;
 use uuid::Uuid;
@@ -26,7 +26,7 @@ use uuid::Uuid;
 use crate::optimizer::plan_node::PlanNodeType;
 use crate::scheduler::plan_fragmenter::{ExecutionPlanNode, Query};
 use crate::scheduler::task_context::FrontendBatchTaskContext;
-use crate::scheduler::HummockSnapshotManagerRef;
+use crate::scheduler::{HummockSnapshotManagerRef, SchedulerError, SchedulerResult};
 
 pub struct LocalQueryExecution {
     sql: String,
@@ -87,7 +87,7 @@ impl LocalQueryExecution {
     /// which part should be executed on the backend is the first exchange operator when looking
     /// from the the root of the plan to the leaves. The first exchange operator contains
     /// the pushed-down plan fragment.
-    fn create_plan_fragment(&self) -> Result<PlanFragment> {
+    fn create_plan_fragment(&self) -> SchedulerResult<PlanFragment> {
         let stage = self
             .query
             .stage_graph
@@ -105,17 +105,20 @@ impl LocalQueryExecution {
         })
     }
 
-    fn convert_plan_node(&self, execution_plan_node: &ExecutionPlanNode) -> Result<PlanNodeProst> {
+    fn convert_plan_node(
+        &self,
+        execution_plan_node: &ExecutionPlanNode,
+    ) -> SchedulerResult<PlanNodeProst> {
         match execution_plan_node.plan_node_type {
-            PlanNodeType::BatchExchange => {
-                Err(internal_error("Exchange not supported in local mode yet!"))
-            }
+            PlanNodeType::BatchExchange => Err(SchedulerError::Internal(anyhow::Error::msg(
+                "Exchange not supported in local mode yet!",
+            ))),
             _ => {
                 let children = execution_plan_node
                     .children
                     .iter()
                     .map(|e| self.convert_plan_node(e))
-                    .collect::<Result<Vec<PlanNodeProst>>>()?;
+                    .collect::<SchedulerResult<Vec<PlanNodeProst>>>()?;
 
                 Ok(PlanNodeProst {
                     children,
